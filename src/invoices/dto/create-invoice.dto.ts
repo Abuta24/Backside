@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsMongoId, IsNotEmpty, IsNumber } from 'class-validator';
+import mongoose from 'mongoose';
 
 export class CreateInvoiceDto {
   @IsNotEmpty()

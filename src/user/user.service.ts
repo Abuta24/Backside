@@ -1,38 +1,57 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './entities/user.entity';
-import { Model } from 'mongoose';
+import mongoose, { Model, ObjectId } from 'mongoose';
 
 @Injectable()
 export class UserService {
   constructor(@InjectModel(User.name) private UserModel: Model<User>) {}
 
   async create(createUserDto: CreateUserDto) {
-    try {
-      const createdUser = await this.UserModel.create(createUserDto);
-      await createdUser.save();
-
-      return createdUser;
-    } catch (er) {
-      throw new HttpException('Email already used', HttpStatus.BAD_REQUEST);
+    const existingUser = await this.UserModel.findOne({
+      email: createUserDto.email,
+    });
+    if (existingUser) {
+      throw new BadRequestException('User already exists');
     }
+    const user = new this.UserModel(createUserDto);
+    return user.save();
   }
 
   async findAll() {
-    return this.UserModel.find().populate('invoices');
+    return this.UserModel.find().populate({
+      path: 'invoices',
+      select: 'description amount price',
+    });
   }
 
-  async findOne(email: string) {
+  findOne(id: any) {
+    return this.UserModel.findById(id).populate({
+      path: 'invoices',
+      select: 'description amount price',
+    });
+  }
+
+  async findOnez(email: string) {
     return this.UserModel.findOne({ email: email }).select([
       'email',
       'password',
     ]);
   }
 
-  findOneByEmail(email: string) {
-    return this.UserModel.findOne({ email: email });
+  findByEmail(email: string) {
+    return this.UserModel.findOne({ email: email }).select([
+      'email',
+      'password',
+      '_id',
+    ]);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -43,7 +62,20 @@ export class UserService {
     return this.UserModel.findByIdAndDelete(id);
   }
 
+  findById(id: ObjectId): Promise<User> {
+    return this.UserModel.findById(id);
+  }
+
   async getCurrentUser(email: string): Promise<User> {
     return this.UserModel.findOne({ email });
+  }
+
+  async addInvoice(
+    userId: mongoose.Schema.Types.ObjectId,
+    invoiceId: mongoose.Schema.Types.ObjectId,
+  ) {
+    const user = await this.UserModel.findById(userId);
+    user.invoices.push(invoiceId);
+    user.save();
   }
 }

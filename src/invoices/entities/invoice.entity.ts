@@ -1,8 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 
-@Schema()
+@Schema({ timestamps: true })
 export class Invoice {
+  _id: mongoose.Schema.Types.ObjectId;
+
   @Prop({ required: true })
   amount: number;
 
@@ -12,8 +14,11 @@ export class Invoice {
   @Prop({ required: true })
   price: number;
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }])
-  user: mongoose.Schema.Types.ObjectId[];
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  })
+  userId: mongoose.Schema.Types.ObjectId;
 }
 
 export const InvoiceSchema = SchemaFactory.createForClass(Invoice);

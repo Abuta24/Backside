@@ -4,6 +4,7 @@ import { SignUpDto } from './dto/sign-up-dto';
 import * as bcrypt from 'bcrypt';
 import { SignInDto } from './dto/sign-in-dto';
 import { JwtService } from '@nestjs/jwt';
+import { CurrentUserDto } from 'src/user/dto/currentUser.dto';
 
 @Injectable()
 export class AuthService {
@@ -15,7 +16,7 @@ export class AuthService {
   async signUp(signUpDto: SignUpDto) {
     const { email, password } = signUpDto;
 
-    const existingUser = await this.userService.findOne(signUpDto.email);
+    const existingUser = await this.userService.findOnez(signUpDto.email);
     if (existingUser) {
       throw new BadRequestException('Email already registered');
     }
@@ -24,12 +25,12 @@ export class AuthService {
 
     const user = await this.userService.create({ email, password: hashedPass });
     await user.save();
-    return 'User Registered Successfully';
+    return { message: 'User Registered Successfully' };
   }
 
   async signIn(signInDto: SignInDto) {
     const { email, password } = signInDto;
-    const existingUser = await this.userService.findOne(email);
+    const existingUser = await this.userService.findByEmail(email);
     if (!existingUser) {
       throw new BadRequestException('Invalid Credentials');
     }
@@ -40,14 +41,19 @@ export class AuthService {
     }
 
     const JwtPayload = {
-      email,
+      email: existingUser.email,
+      id: existingUser._id,
     };
 
-    const accessToken = await this.JWTService.signAsync(JwtPayload);
+    const accessToken = await this.JWTService.sign(JwtPayload);
     return { accessToken };
   }
 
-  async getCurrentUser(email: string) {
-    return this.userService.findOneByEmail(email);
+  async getCurrentUser(user: CurrentUserDto) {
+    return user;
+  }
+
+  async validateUser(payload: any): Promise<any> {
+    return { _id: payload.sub, email: payload.email };
   }
 }

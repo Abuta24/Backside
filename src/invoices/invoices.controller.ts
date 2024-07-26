@@ -10,31 +10,31 @@ import {
   HttpException,
   HttpStatus,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
+import { CurrentUser } from 'src/user/user.decorator';
+import { CurrentUserDto } from 'src/user/dto/currentUser.dto';
+import { AuthGuard } from 'src/auth/auth.guard';
 
+@UseGuards(AuthGuard)
 @Controller('invoices')
 export class InvoicesController {
   constructor(private readonly invoicesService: InvoicesService) {}
 
   @Post()
-  async create(@Body() createInvoiceDto: CreateInvoiceDto) {
-    try {
-      const newInvoice = await this.invoicesService.create(createInvoiceDto);
-      return newInvoice;
-    } catch (error) {
-      throw new HttpException(
-        'Failed to create invoice',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+  create(
+    @Body() createInvoiceDto: CreateInvoiceDto,
+    @CurrentUser() user: CurrentUserDto,
+  ) {
+    return this.invoicesService.create(createInvoiceDto, user);
   }
 
   @Get()
-  async findAll(@Query() query: any) {
-    return this.invoicesService.findAll(query);
+  findAll() {
+    return this.invoicesService.findAll();
   }
 
   @Get(':id')

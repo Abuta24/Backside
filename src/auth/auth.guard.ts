@@ -5,7 +5,6 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -13,25 +12,27 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = this.getTokenFromHeaders(request);
+    const token = getTokenFromHeaders(request);
     if (!token) {
       throw new BadRequestException('Invalid Token');
     }
 
     try {
       const user = await this.jwtService.verifyAsync(token);
-      request.user = user;
+      request.user = {
+        email: user.email,
+        id: user.id,
+      };
     } catch (error) {
-      console.log(error);
       throw new BadRequestException('Invalid Token');
     }
 
     return true;
   }
+}
 
-  getTokenFromHeaders(req: Request): string | null {
-    if (!req.headers.authorization) return null;
-    const [type, token] = req.headers.authorization.split(' ');
-    return type === 'Bearer' ? token : null;
-  }
+function getTokenFromHeaders(req) {
+  if (!req.headers['authorization']) return null;
+  const token = req.headers['authorization'].split(' ')[1];
+  return token;
 }

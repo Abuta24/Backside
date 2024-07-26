@@ -12,10 +12,16 @@ import {
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Post()
+  create(@Body() CreateUserDto: CreateUserDto) {
+    return this.userService.create(CreateUserDto);
+  }
 
   @UseGuards(AuthGuard)
   @Get('currentuser')
