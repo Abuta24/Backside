@@ -13,7 +13,7 @@ export class SignUpDto {
     message: 'Password must be 8 charachters or longer',
   })
   @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-    message: 'only latin charachters allowed',
+    message: 'password should start with uppercase and contain any number',
   })
   password: string;
 }
