@@ -1,18 +1,22 @@
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
+  forwardRef,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './entities/user.entity';
 import mongoose, { Model, ObjectId } from 'mongoose';
+import { Invoice } from 'src/invoices/entities/invoice.entity';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private UserModel: Model<User>) {}
+  constructor(
+    @InjectModel(User.name) private UserModel: Model<User>,
+    @InjectModel(Invoice.name) private readonly invoiceModel: Model<Invoice>,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     const existingUser = await this.UserModel.findOne({
@@ -58,8 +62,15 @@ export class UserService {
     return this.UserModel.findByIdAndUpdate(id, updateUserDto, { new: true });
   }
 
-  async remove(id: string) {
-    return this.UserModel.findByIdAndDelete(id);
+  async deleteUser(userId: string): Promise<void> {
+    const user = await this.UserModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.invoiceModel.deleteMany({ userId });
+
+    await this.UserModel.findByIdAndDelete(userId);
   }
 
   findById(id: ObjectId): Promise<User> {
